@@ -1,15 +1,29 @@
-# Mets Misery Madness — Version 4 Static
+# Mets "Oh the Pain" Misery Madness
 
-Open `index.html` directly in a browser.
+An interactive NCAA-style bracket to determine the greatest disaster in Mets history.
 
-Version 4 updates:
-- Restored darker Mets blue palette
-- Region names styled as headers, not buttons
-- More spacing between region labels and controls
-- Updated region names: Félix Millán, Rico Brogna, Bob Apodaca, Jed Lowrie
-- Tighter desktop bracket columns to reduce horizontal scrolling
-- Full 64-entry bracket with Citi Field's original design correction
+## Live App
 
-Notes:
-- Local file share links will start with `file://` and only work on your computer.
-- Once deployed to a website, the Copy Share Link button will generate a real shareable URL.
+https://robertmbecker.github.io/mets-oh-the-pain/
+
+## Features
+
+- 64 infamous Mets moments
+- Four themed regions
+- Click-to-advance bracket
+- Final Four and Championship
+- Autosave
+- Shareable brackets
+- Mobile friendly
+
+## Credits
+
+Original bracket concept:
+One Shining Mets (@oneshiningmets)
+and
+90 Percent Mets
+
+Interactive adaptation:
+Robert M. Becker (@robmbecker)
+
+Version 1.0.1
