@@ -1,6 +1,6 @@
 # Mets "Oh the Pain" Misery Madness
 
-![Application Screenshot](images/screenshot.png)
+![Application Screenshot](./images/screenshot.png)
 
 An interactive NCAA-style bracket to determine the greatest disaster in Mets history.
 
