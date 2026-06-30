@@ -1,5 +1,7 @@
 # Mets "Oh the Pain" Misery Madness
 
+![Application Screenshot](images/screenshot.png)
+
 An interactive NCAA-style bracket to determine the greatest disaster in Mets history.
 
 ## Live App
@@ -20,10 +22,14 @@ https://robertmbecker.github.io/mets-oh-the-pain/
 
 Original bracket concept:
 One Shining Mets (@oneshiningmets)
+
 and
+
 90 Percent Mets
 
 Interactive adaptation:
 Robert M. Becker (@robmbecker)
 
-Version 1.0.1
+## Current Version
+
+**v1.0.1**
