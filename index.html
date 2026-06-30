@@ -8,6 +8,7 @@
 <style>
 :root { --blue:#002D72; --deepblue:#001f4f; --orange:#FF5910; --bg:#f7f7fb; --card:#ffffff; --ink:#1e2430; --muted:#657083; --line:#d8dde8; --softorange:#fff3ed; }
 * { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
 body { margin:0; font-family: Arial, Helvetica, sans-serif; background:linear-gradient(180deg,#ffffff,var(--bg)); color:var(--ink); }
 header { background:radial-gradient(circle at 20% 10%,rgba(255,89,16,.24),transparent 24%), linear-gradient(135deg,var(--blue),var(--deepblue)); color:white; padding:30px 22px 32px; text-align:center; border-bottom:6px solid var(--orange); position:relative; overflow:hidden; }
 .header-inner { max-width:1180px; margin:0 auto; position:relative; z-index:1; }
@@ -63,7 +64,8 @@ h3 { margin:0 0 8px; color:var(--muted); font-size:11px; text-transform:uppercas
 .champion strong { display:block; color:var(--blue); font-size:clamp(28px,5vw,48px); line-height:1.05; margin-top:8px; }
 .note { font-size:13px; color:var(--muted); text-align:center; margin:14px 0 0; }
 .badges { display:flex; justify-content:center; gap:16px 26px; flex-wrap:wrap; margin:28px auto 0; max-width:980px; }
-.badge { color:#fff; background:transparent; border-radius:0; padding:0 0 6px; border:0; border-bottom:3px solid var(--orange); font-size:14px; font-weight:900; letter-spacing:.01em; }
+.badge { color:#fff; background:transparent; border-radius:0; padding:0 0 6px; border:0; border-bottom:3px solid var(--orange); font-size:14px; font-weight:900; letter-spacing:.01em; text-decoration:none; }
+.badge:hover, .badge:focus { color:#ffd7c6; outline:0; border-bottom-color:#fff; }
 footer { max-width:1580px; margin:0 auto; padding:10px 24px 28px; color:var(--muted); font-size:13px; text-align:center; }
 footer p { margin:4px 0; }
 .toast { position:fixed; top:18px; right:18px; z-index:10; max-width:min(360px,calc(100vw - 36px)); padding:14px 16px; border-radius:12px; background:#fff; color:var(--blue); border:2px solid var(--orange); box-shadow:0 14px 34px rgba(0,0,0,.18); font-size:14px; font-weight:800; opacity:0; transform:translateY(-8px); pointer-events:none; transition:opacity .2s ease, transform .2s ease; }
@@ -73,6 +75,7 @@ footer p { margin:4px 0; }
 @keyframes finalFourFlash { 0% { background:#ffe1d3; transform:scale(1.03); } 35% { background:#fff0e8; } 100% { background:#fbfcff; transform:scale(1); } }
 @media (max-width: 1180px) { .grid { grid-template-columns:1fr; } .rounds { grid-template-columns: minmax(210px,1.6fr) minmax(180px,1.25fr) minmax(160px,1.05fr) minmax(150px,1fr); } }
 @media (max-width: 980px) { .grid { grid-template-columns:1fr; } .final-grid { grid-template-columns:1fr; } main { padding:12px; } header { padding-left:14px; padding-right:14px;} .hero { flex-direction:column; gap:14px; } .hero-copy { text-align:center; } header p { margin:0 auto; } .badges { margin-top:24px; } .progress { width:min(100%,320px); text-align:center; } }
+@media (max-width: 700px) { .region-card, .finals { overflow-x:visible; padding:14px; } .rounds { grid-template-columns:1fr; gap:14px; } .rounds > div:not(:first-child) .matchup:before, .final-grid .matchup:before, #championship .matchup:before { display:none; } .competitor { min-height:44px; } .title { font-size:13px; } }
 </style>
 </head>
 <body>
@@ -87,7 +90,7 @@ footer p { margin:4px 0; }
         <div class="instruction">Click the more infamous moment in each matchup to advance it.</div>
       </div>
     </div>
-    <div class="badges"><span class="badge">Félix Millán Region</span><span class="badge">Rico Brogna Region</span><span class="badge">Bob Apodaca Region</span><span class="badge">Jed Lowrie Region</span></div>
+    <div class="badges"><a class="badge" href="#region-felix-millan" aria-label="Jump to Félix Millán Region">Félix Millán Region</a><a class="badge" href="#region-rico-brogna" aria-label="Jump to Rico Brogna Region">Rico Brogna Region</a><a class="badge" href="#region-bob-apodaca" aria-label="Jump to Bob Apodaca Region">Bob Apodaca Region</a><a class="badge" href="#region-jed-lowrie" aria-label="Jump to Jed Lowrie Region">Jed Lowrie Region</a></div>
     <div class="controls">
       <button class="secondary" id="resetBtn">Reset</button>
       <button id="copyBtn">Copy Share Link</button>
@@ -125,20 +128,24 @@ let flashTarget = null;
 let flashTimer = null;
 let finalFourMessage = false;
 function keyFor(region, round, index) { return `${region}:${round}:${index}`; }
+function regionId(name) { return 'region-' + name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function same(a,b) { return a && b && a.seed === b.seed && a.title === b.title; }
 function encodePicks(obj) { try { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); } catch(e) { return ''; } }
 function decodePicks(value) { try { return JSON.parse(decodeURIComponent(escape(atob(value)))); } catch(e) { return null; } }
-function loadPicks() { const params = new URLSearchParams(location.search); const shared = params.get('picks'); if(shared) { const decoded=decodePicks(shared); if(decoded) return decoded; } try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; } }
-function savePicks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(picks)); }
+function readStoredPicks() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; } }
+function writeStoredPicks(value) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch(e) {} }
+function clearStoredPicks() { try { localStorage.removeItem(STORAGE_KEY); } catch(e) {} }
+function loadPicks() { const params = new URLSearchParams(location.search); const shared = params.get('picks'); if(shared) { const decoded=decodePicks(shared); if(decoded) { writeStoredPicks(decoded); return decoded; } } return readStoredPicks(); }
+function savePicks() { writeStoredPicks(picks); }
 function nextSlotForPick(id) { const parts=id.split(':'); const region=parts[0]; const round=parts[1]; const index=Number(parts[2]); if(round==='r1') return keyFor(region,'r2',Math.floor(index/2)); if(round==='r2') return keyFor(region,'r3',Math.floor(index/2)); if(round==='r3') return keyFor(region,'r4',0); if(round==='r4') { const regionIndex=DATA.regions.findIndex(r=>r.name===region); return keyFor('Final Four','sf',regionIndex < 2 ? 0 : 1); } if(round==='sf') return keyFor('Championship','final',0); if(round==='final') return 'champion'; return null; }
 function setPick(id, competitor) { picks[id] = competitor; savePicks(); flashTarget = nextSlotForPick(id); finalFourMessage = id.split(':')[1] === 'r4'; render(); clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ flashTarget=null; finalFourMessage=false; render(); }, 1200); }
 function getWinner(region, round, i) { return picks[keyFor(region, round, i)] || null; }
 function competitorButton(c, selected, onClick) { const b=document.createElement('button'); b.className='competitor'+(selected?' selected':''); b.disabled=!c; b.onclick=()=> c && onClick(c); const seed=document.createElement('span'); seed.className='seed'; seed.textContent=c?c.seed:''; const title=document.createElement('span'); title.className='title'; title.textContent=c?c.title:'TBD'; b.append(seed,title); return b; }
 function matchupEl(region, round, index, a, b) { const wrap=document.createElement('div'); const id=keyFor(region,round,index); wrap.className='matchup'+(flashTarget===id?' flash':''); const selected=picks[id]; wrap.append(competitorButton(a, same(selected,a), c=>setPick(id,c))); wrap.append(competitorButton(b, same(selected,b), c=>setPick(id,c))); return wrap; }
 function roundColumn(label, matchups, region, round) { const col=document.createElement('div'); const h=document.createElement('h3'); h.textContent=label; col.append(h); matchups.forEach((m,i)=>col.append(matchupEl(region,round,i,m[0],m[1]))); return col; }
-function renderRegion(region) { const sec=document.createElement('section'); sec.className='region-card'; const h=document.createElement('h2'); h.textContent=region.name + ' Region'; const sub=document.createElement('div'); sub.className='region-sub'; sub.textContent='Famous / infamous Mets'; sec.append(h, sub); const rounds=document.createElement('div'); rounds.className='rounds'; const r1=region.matchups.map(m=>[m.competitor1,m.competitor2]); const r2=[[getWinner(region.name,'r1',0),getWinner(region.name,'r1',1)],[getWinner(region.name,'r1',2),getWinner(region.name,'r1',3)],[getWinner(region.name,'r1',4),getWinner(region.name,'r1',5)],[getWinner(region.name,'r1',6),getWinner(region.name,'r1',7)]]; const r3=[[getWinner(region.name,'r2',0),getWinner(region.name,'r2',1)],[getWinner(region.name,'r2',2),getWinner(region.name,'r2',3)]]; const r4=[[getWinner(region.name,'r3',0),getWinner(region.name,'r3',1)]]; rounds.append(roundColumn('Round 1',r1,region.name,'r1'), roundColumn('Round 2',r2,region.name,'r2'), roundColumn('Sweet 16',r3,region.name,'r3'), roundColumn('Elite 8',r4,region.name,'r4')); sec.append(rounds); return sec; }
+function renderRegion(region) { const sec=document.createElement('section'); sec.className='region-card'; sec.id=regionId(region.name); const h=document.createElement('h2'); h.textContent=region.name + ' Region'; const sub=document.createElement('div'); sub.className='region-sub'; sub.textContent='Famous / infamous Mets'; sec.append(h, sub); const rounds=document.createElement('div'); rounds.className='rounds'; const r1=region.matchups.map(m=>[m.competitor1,m.competitor2]); const r2=[[getWinner(region.name,'r1',0),getWinner(region.name,'r1',1)],[getWinner(region.name,'r1',2),getWinner(region.name,'r1',3)],[getWinner(region.name,'r1',4),getWinner(region.name,'r1',5)],[getWinner(region.name,'r1',6),getWinner(region.name,'r1',7)]]; const r3=[[getWinner(region.name,'r2',0),getWinner(region.name,'r2',1)],[getWinner(region.name,'r2',2),getWinner(region.name,'r2',3)]]; const r4=[[getWinner(region.name,'r3',0),getWinner(region.name,'r3',1)]]; rounds.append(roundColumn('Round 1',r1,region.name,'r1'), roundColumn('Round 2',r2,region.name,'r2'), roundColumn('Sweet 16',r3,region.name,'r3'), roundColumn('Elite 8',r4,region.name,'r4')); sec.append(rounds); return sec; }
 function render() { document.getElementById('regions').replaceChildren(...DATA.regions.map(renderRegion)); const finalFour = DATA.regions.map(r=>getWinner(r.name,'r4',0)); const finalPairs = [[finalFour[0],finalFour[1]],[finalFour[2],finalFour[3]]]; document.getElementById('finalFour').replaceChildren(...finalPairs.map((m,i)=>matchupEl('Final Four','sf',i,m[0],m[1]))); const champPair=[getWinner('Final Four','sf',0),getWinner('Final Four','sf',1)]; document.getElementById('championship').replaceChildren(matchupEl('Championship','final',0,champPair[0],champPair[1])); const champion=getWinner('Championship','final',0); document.getElementById('championName').textContent=champion?champion.title:'TBD'; document.getElementById('championCard').classList.toggle('flash', flashTarget==='champion'); const advanceMessage=document.getElementById('advanceMessage'); advanceMessage.textContent=finalFourMessage?'Advanced to Final Four.':''; advanceMessage.classList.toggle('show', finalFourMessage); const made=Math.min(Object.keys(picks).filter(k=>picks[k]).length,TOTAL_PICKS); document.getElementById('status').textContent=`${made} / ${TOTAL_PICKS} picks made`; document.getElementById('progressFill').style.width=`${(made/TOTAL_PICKS)*100}%`; }
-document.getElementById('resetBtn').onclick=()=>{ picks={}; flashTarget=null; finalFourMessage=false; clearTimeout(flashTimer); localStorage.removeItem(STORAGE_KEY); history.replaceState(null,'',location.pathname); render(); };
+document.getElementById('resetBtn').onclick=()=>{ picks={}; flashTarget=null; finalFourMessage=false; clearTimeout(flashTimer); clearStoredPicks(); history.replaceState(null,'',location.pathname); render(); };
 function showShareToast() { const toast=document.getElementById('shareToast'); toast.innerHTML='✅ Share link copied!'+(location.protocol==='file:'?'<small>Share links will work once the app is published online.</small>':''); toast.classList.add('show'); clearTimeout(showShareToast.timer); showShareToast.timer=setTimeout(()=>toast.classList.remove('show'),2000); }
 document.getElementById('copyBtn').onclick=async()=>{ const encoded=encodeURIComponent(encodePicks(picks)); const url=location.protocol==='file:'?`${location.href.split('?')[0]}?picks=${encoded}`:`${location.origin}${location.pathname}?picks=${encoded}`; try { await navigator.clipboard.writeText(url); showShareToast(); } catch(e) { prompt('Copy this link:', url); } };
 render();
